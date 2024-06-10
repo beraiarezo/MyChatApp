@@ -33,7 +33,7 @@ class RestfulNewtableCtrlBase : public RestfulController
 
     orm::DbClientPtr getDbClient() 
     {
-        return drogon::app().getDbClient("default");
+        return drogon::app().getDbClient(dbClientName_);
     }
 
   protected:
