@@ -1,1 +1,26 @@
-<h1>Hello Drogon!</h1>
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Chat App</title>
+  </head>
+  <body>
+    <input type="text" id="message" placeholder="Type a message" />
+    <button onclick="sendMessage()">Send</button>
+
+    <script>
+      let user = prompt("Enter your username:");
+      let ws = new WebSocket(`ws://localhost:8080/chat?user=${user}`);
+
+      ws.onmessage = function (event) {
+        alert("Received message: " + event.data);
+      };
+
+      function sendMessage() {
+        let message = document.getElementById("message").value;
+        let recipient = prompt("Enter recipient username:");
+        ws.send(`${recipient}:${message}`);
+      }
+    </script>
+    <h1>Hello My DROGON !!!</h1>
+  </body>
+</html>

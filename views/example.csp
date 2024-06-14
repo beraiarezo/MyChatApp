@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Example</title>
+</head>
+<body>
+    <h1>@@message</h1>
+    <p>Number: @@number</p>
+    <p>Additional number: $$ number $$</p>
+     <p>
+        olaaa ====
+        $$<<number<<$$
+    </p>
+
+
+  <p>
+        12312321312 ====
+        $$number<<
+    </p>
+
+
+  <p>
+        12312321312 ====
+        $$ << number << $$
+    </p>
+
+
+      <p>
+        12312321312 ====
+        $$ << number
+    </p>
+
+
+      <p>
+ 1111111 {{ $$<<number }}
+    </p>
+
+    <input type="text" id="message" />
+    <button onclick="sendMessage()">send<button>
+    <script>
+        let user = prompt("Enter your username:");
+        let ws = new WebSocket(`ws://localhost:8000/chat?user=${user}`);
+
+        ws.onmessage = function(event) {
+            alert("Received message: " + event.data);
+        };
+
+        function sendMessage() {
+            let message = document.getElementById('message').value;
+            let recipient = prompt("Enter recipient username:");
+            console.log(`${recipient}:${message}`, '---');
+            ws.send(`${recipient}:${message}`);
+        }
+    </script>
+</body>
+</html>

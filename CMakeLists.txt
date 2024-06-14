@@ -23,8 +23,8 @@ add_executable(${PROJECT_NAME} main.cc)
 
 
 
-find_package(nlohmann_json REQUIRED)
-include_directories(${nlohmann_json_INCLUDE_DIRS})
+# find_package(nlohmann_json REQUIRED)
+# include_directories(${nlohmann_json_INCLUDE_DIRS})
 
 # ##############################################################################
 # If you include the drogon source code locally in your project, use this method
@@ -34,7 +34,7 @@ include_directories(${nlohmann_json_INCLUDE_DIRS})
 #
 # and comment out the following lines
 find_package(Drogon CONFIG REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE nlohmann_json::nlohmann_json Drogon::Drogon)
+target_link_libraries(${PROJECT_NAME} PRIVATE Drogon::Drogon)
 
 # ##############################################################################
 
@@ -78,3 +78,15 @@ target_sources(${PROJECT_NAME}
 # ##############################################################################
 
 add_subdirectory(test)
+
+add_subdirectory(libs/libbcrypt)
+target_link_libraries(${PROJECT_NAME} PRIVATE bcrypt)
+target_include_directories(${PROJECT_NAME}
+        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/libs/libbcrypt/include) 
+
+add_subdirectory(libs/jwt-cpp)
+target_link_libraries(${PROJECT_NAME} PRIVATE jwt-cpp)
+target_include_directories(${PROJECT_NAME}
+        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/libs/jwt-cpp/include)

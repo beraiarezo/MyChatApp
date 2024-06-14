@@ -1,0 +1,6 @@
+[submodule "libs/libbcrypt"]
+	path = libs/libbcrypt
+	url = https://github.com/trusch/libbcrypt.git
+[submodule "libs/jwt-cpp"]
+	path = libs/jwt-cpp
+	url = https://github.com/Thalhammer/jwt-cpp.git
