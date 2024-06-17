@@ -85,12 +85,12 @@ Task<void> ConversationCtrl::performTransaction(
     co_await linkMessageToConversation(conversationId, messageId);
 
     // Notify users about the new message
-    auto participantsResult = co_await dbClient->execSqlCoro("SELECT user_id FROM participants WHERE conversation_id = $1", conversationId);
-    auto &wsController = EchoWebsock::getInstance();
-    for (const auto &row : participantsResult) {
-        std::string userId = row["user_id"].as<std::string>();
-        wsController.sendMessageToUser(userId, "You have received a new message in conversation " + conversationId);
-    }
+    // auto participantsResult = co_await dbClient->execSqlCoro("SELECT user_id FROM participants WHERE conversation_id = $1", conversationId);
+    // auto &wsController = EchoWebsock::getInstance();
+    // for (const auto &row : participantsResult) {
+    //     std::string userId = row["user_id"].as<std::string>();
+    //     wsController.sendMessageToUser(userId, "You have received a new message in conversation " + conversationId);
+    // }
 
     // Commit transaction
     co_await dbClient->execSqlCoro("COMMIT");

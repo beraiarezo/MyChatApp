@@ -3,21 +3,8 @@
 #include <sstream>
 #include <iostream>
 #include <drogon/HttpController.h>
-
+#include "controllers/EchoWebsock.h"
 using namespace drogon;
-
-
-// Task<void> handleRequest(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) {
-//   // Use co_await to start asynchronous data fetching
-//   auto data = co_await fetchData();
-
-//   // Respond with the fetched data
-//   auto response = HttpResponse::newHttpResponse();
-//   response->setStatusCode(HttpStatusCode::k200OK);
-//   response->setBody(data);
-
-//   callback(response);
-// }
 
 void executeSchema(const std::vector<std::string>& sqlCommands) {
         LOG_DEBUG << "hellllooooiii";
@@ -35,19 +22,6 @@ void executeSchema(const std::vector<std::string>& sqlCommands) {
             std::cerr << "Failed to execute SQL command: " << e.base().what() << std::endl;
         });
     }
-}
-
-Task<void> Handle1()
-{
-    std::cout << "Handle1" << std::endl;
-    co_await sleepCoro(app().getLoop(), 10);
-}
- 
-Task<void> Handle2()
-{   
-    co_await sleepCoro(app().getLoop(), 2);
-    std::cout << "OLAAAAA" << std::endl;
-
 }
 
 int main() {
@@ -76,10 +50,12 @@ int main() {
     }
 
     // Register an event to run after the HTTP server has started
-    drogon::app().getLoop()->queueInLoop([sqlCommands]() {
-        executeSchema(sqlCommands);
-    });
+    // drogon::app().getLoop()->queueInLoop([sqlCommands]() {
+    //     executeSchema(sqlCommands);
+    // });
 
+
+    // drogon::app().registerController(std::make_shared<EchoWebsock>());
 
     // Run the Drogon application
     drogon::app().run();

@@ -48,6 +48,9 @@ void EchoWebsock::handleNewConnection(const HttpRequestPtr &req, const WebSocket
 {
      // Extract user ID from query parameters (e.g., ws://host/chat?user=userID)
     auto user = req->getParameter("user");
+
+    LOG_DEBUG << "------" << user << "----USSEEERRRR";
+
     if (!user.empty())
     {
         userConnections_[user] = wsConnPtr;
