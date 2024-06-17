@@ -68,3 +68,11 @@ void EchoWebsock::handleConnectionClosed(const WebSocketConnectionPtr& wsConnPtr
         }
     }
 }
+
+void EchoWebsock::sendMessageToUser(const std::string &userId, const std::string &message) {
+    std::lock_guard<std::mutex> guard(connectionsMutex_);
+    auto it = userConnections_.find(userId);
+    if (it != userConnections_.end()) {
+        it->second->send(message);
+    }
+}
