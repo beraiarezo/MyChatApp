@@ -1,5 +1,10 @@
 #include "EchoWebsock.h"
+#include <shared_mutex>
+#include <mutex>
 
+using mutex_type = std::shared_mutex;
+using read_only_lock = std::shared_lock<mutex_type>;
+using updatable_lock = std::unique_lock<mutex_type>;
 
 std::string WebSocketMessageTypeToString(const drogon::WebSocketMessageType &type) {
     switch (type) {
@@ -24,7 +29,7 @@ void EchoWebsock::handleNewMessage(const WebSocketConnectionPtr& wsConnPtr, std:
      std::string typeStr = WebSocketMessageTypeToString(type);
 
     // Log the WebSocketMessageType
-    LOG_INFO << "Received WebSocket message of type: " << typeStr;
+    LOG_INFO << "Received WebSocket message of type: " << typeStr << "   ----   " << userConnections_.size();
 
      if (type == WebSocketMessageType::Text)
     {
@@ -46,10 +51,11 @@ void EchoWebsock::handleNewMessage(const WebSocketConnectionPtr& wsConnPtr, std:
 
 void EchoWebsock::handleNewConnection(const HttpRequestPtr &req, const WebSocketConnectionPtr& wsConnPtr)
 {
+    updatable_lock lock(connectionsMutex_);
+
+
      // Extract user ID from query parameters (e.g., ws://host/chat?user=userID)
     auto user = req->getParameter("user");
-
-    LOG_DEBUG << "------" << user << "----USSEEERRRR";
 
     if (!user.empty())
     {
@@ -59,6 +65,9 @@ void EchoWebsock::handleNewConnection(const HttpRequestPtr &req, const WebSocket
 
 void EchoWebsock::handleConnectionClosed(const WebSocketConnectionPtr& wsConnPtr)
 {
+    updatable_lock lock(connectionsMutex_);
+
+
     LOG_INFO << "Connection Closed";
 
     for (auto it = userConnections_.begin(); it != userConnections_.end(); ++it)
@@ -73,9 +82,14 @@ void EchoWebsock::handleConnectionClosed(const WebSocketConnectionPtr& wsConnPtr
 }
 
 void EchoWebsock::sendMessageToUser(const std::string &userId, const std::string &message) {
-    std::lock_guard<std::mutex> guard(connectionsMutex_);
+            updatable_lock lock(connectionsMutex_);
+
     auto it = userConnections_.find(userId);
-    if (it != userConnections_.end()) {
-        it->second->send(message);
+
+    for (auto it = userConnections_.begin(); it != userConnections_.end(); ++it)
+    {
+
+
+        it->second->send("8681f5e9-e2fd-434e-9ca2-b774cd39fbcd:hello");
     }
 }

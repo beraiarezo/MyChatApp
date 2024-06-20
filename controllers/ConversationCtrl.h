@@ -2,12 +2,16 @@
 
 #include <drogon/HttpController.h>
 #include "filters/AuthFilter.h"
+#include "EchoWebsock.h"
 
 using namespace drogon;
 
-class ConversationCtrl : public drogon::HttpController<ConversationCtrl>
+class ConversationCtrl : public drogon::HttpController<ConversationCtrl, false>
 {
   public:
+
+    ConversationCtrl(std::shared_ptr<EchoWebsock> echoWebsock)
+        : echoWebsock_(echoWebsock) {}
 
     void asyncHandleHttpRequest(const std::shared_ptr<HttpRequest> &req,
                                       std::function<void(const std::shared_ptr<HttpResponse>)> &&callback);
@@ -40,6 +44,7 @@ class ConversationCtrl : public drogon::HttpController<ConversationCtrl>
     // asyncHandleHttpRequest(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback);
     void handler(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback);
 
-
+    private:
+      std::shared_ptr<EchoWebsock> echoWebsock_;
 };
 

@@ -2,8 +2,9 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
-#include <drogon/HttpController.h>
 #include "controllers/EchoWebsock.h"
+#include "controllers/ConversationCtrl.h"
+
 using namespace drogon;
 
 void executeSchema(const std::vector<std::string>& sqlCommands) {
@@ -54,8 +55,15 @@ int main() {
     //     executeSchema(sqlCommands);
     // });
 
+    // auto sharedService = std::make_shared<SharedStateService>();
 
-    // drogon::app().registerController(std::make_shared<EchoWebsock>());
+    auto wsCtrlPtr = std::make_shared<EchoWebsock>();
+    auto httpCtrlPtr = std::make_shared<ConversationCtrl>(wsCtrlPtr);
+
+
+    // drogon::app().registerController<ConversationCtrl>(sharedService);
+    drogon::app().registerController(httpCtrlPtr);
+    drogon::app().registerController(wsCtrlPtr);
 
     // Run the Drogon application
     drogon::app().run();

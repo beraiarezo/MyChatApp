@@ -4,7 +4,6 @@
 
 void AuthCtrl::login(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback)
 {
-    LOG_DEBUG << "looooogiiin";
     // Extract credentials from the request
     auto jsonPtr = req->getJsonObject();
     if (!jsonPtr || !jsonPtr->isMember("email") || !jsonPtr->isMember("password_hash"))

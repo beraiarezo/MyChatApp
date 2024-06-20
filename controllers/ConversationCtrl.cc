@@ -1,6 +1,12 @@
 #include "ConversationCtrl.h"
 #include "EchoWebsock.h"
 #include <coroutine>
+#include <shared_mutex>
+#include <mutex>
+
+using mutex_type = std::shared_mutex;
+using read_only_lock = std::shared_lock<mutex_type>;
+using updatable_lock = std::unique_lock<mutex_type>;
 
 using namespace drogon;
 
@@ -50,7 +56,6 @@ Task<drogon::orm::Row> addMessage(const std::string &senderId, const std::string
 }
 
 Task<void> linkMessageToConversation(const std::string &conversationId, const std::string &messageId) {
-    LOG_DEBUG << conversationId << "DEBUG";
     auto dbClient = app().getDbClient();
     try {
         co_await dbClient->execSqlCoro("INSERT INTO conversation_messages (conversation_id, message_id) VALUES ($1, $2)", conversationId, messageId);
@@ -86,10 +91,13 @@ Task<void> ConversationCtrl::performTransaction(
 
     // Notify users about the new message
     // auto participantsResult = co_await dbClient->execSqlCoro("SELECT user_id FROM participants WHERE conversation_id = $1", conversationId);
-    // auto &wsController = EchoWebsock::getInstance();
+    // auto wsController = EchoWebsock;
+    echoWebsock_->sendMessageToUser("8681f5e9-e2fd-434e-9ca2-b774cd39fbcd", "Teeext");
+    // wsController->sendMessageToUser("8681f5e9-e2fd-434e-9ca2-b774cd39fbcd", "You have received a new message in conversation ");
+    // wsController.get()->sendMessageToUser()
     // for (const auto &row : participantsResult) {
     //     std::string userId = row["user_id"].as<std::string>();
-    //     wsController.sendMessageToUser(userId, "You have received a new message in conversation " + conversationId);
+    //     wsController.sendMessageToUser(userId, "You have received a new message in conversation ");
     // }
 
     // Commit transaction
@@ -147,7 +155,6 @@ Task<void> ConversationCtrl::handleRequestAsync(const HttpRequestPtr &req, std::
     std::string senderId = (*json)["senderId"].asString();
 
     try {
-        LOG_DEBUG << "hello world!!!";
         // Perform the transaction
         co_await createConversationWithParticipantsAndMessages(conversationName, isGroup, userIds, messageContent, senderId);
         auto resp = HttpResponse::newHttpResponse();
@@ -163,11 +170,7 @@ Task<void> ConversationCtrl::handleRequestAsync(const HttpRequestPtr &req, std::
 
 void ConversationCtrl::handler(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback) {
     // Launch the coroutine
-    LOG_DEBUG << "HELLO";
-    
-
-
-            // handleRequestAsync(req, std::move(callback));
+    // handleRequestAsync(req, std::move(callback));
 
     drogon::async_run([=]() -> Task<void> {
         // auto dbClient = app().getDbClient();

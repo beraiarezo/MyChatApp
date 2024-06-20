@@ -1,21 +1,19 @@
 #pragma once
 
 #include <drogon/WebSocketController.h>
+#include <shared_mutex>
+#include <mutex>
+
+
+using mutex_type = std::shared_mutex;
+using read_only_lock = std::shared_lock<mutex_type>;
+using updatable_lock = std::unique_lock<mutex_type>;
 
 using namespace drogon;
 
-class EchoWebsock : public drogon::WebSocketController<EchoWebsock>
+class EchoWebsock : public drogon::WebSocketController<EchoWebsock, false>
 {
-  public:
-    // static EchoWebsock& getInstance() {
-    //     static EchoWebsock instance;
-    //     return instance;
-    // };
-
-    EchoWebsock() {
-      std::cout << "EchoWebsock constructor called" << std::endl;
-    }
-
+  public:     
     void handleNewMessage(const WebSocketConnectionPtr&,
                                   std::string &&,
                                   const WebSocketMessageType &) override;
@@ -29,9 +27,18 @@ class EchoWebsock : public drogon::WebSocketController<EchoWebsock>
       WS_PATH_ADD("/chat", Get);
     WS_PATH_LIST_END
 
+
+    std::unordered_map<std::string, drogon::WebSocketConnectionPtr> getUserConnections() {
+      read_only_lock lock(connectionsMutex_);
+      return userConnections_;
+    }
+
+    std::shared_mutex* getConnectionMutex() {
+        return &connectionsMutex_;
+    }
+
     private:
-        // EchoWebsock() = default;
-        std::unordered_map<std::string, WebSocketConnectionPtr> userConnections_;
-        std::mutex connectionsMutex_;
+      std::unordered_map<std::string, drogon::WebSocketConnectionPtr> userConnections_;
+      mutex_type connectionsMutex_;
 };
 
