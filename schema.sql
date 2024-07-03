@@ -1,13 +1,13 @@
 BEGIN;
 
--- CREATE TABLE users (
---     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
---     name TEXT NOT NULL UNIQUE,
---     email TEXT NOT NULL UNIQUE,
---     password_hash TEXT,
---     is_banned BOOLEAN NOT NULL DEFAULT FALSE,
---     avatar BYTEA
--- );
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL UNIQUE,
+    email TEXT NOT NULL UNIQUE,
+    password_hash TEXT,
+    is_banned BOOLEAN NOT NULL DEFAULT FALSE,
+    avatar BYTEA
+);
 
 CREATE TABLE conversations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -4,35 +4,9 @@
     <title>Example</title>
 </head>
 <body>
-    <h1>@@message</h1>
-    <p>Number: @@number</p>
-    <p>Additional number: $$ number $$</p>
-     <p>
-        olaaa ====
-        $$<<number<<$$
-    </p>
-
-
-  <p>
-        12312321312 ====
-        $$number<<
-    </p>
-
-
-  <p>
-        12312321312 ====
-        $$ << number << $$
-    </p>
-
-
-      <p>
-        12312321312 ====
-        $$ << number
-    </p>
-
-
-      <p>
- 1111111 {{ $$<<number }}
+    <h1>@@</h1>
+    <p>
+        [[ title ]]
     </p>
 
     <input type="text" id="message" />

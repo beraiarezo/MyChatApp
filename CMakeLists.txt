@@ -1,3 +1,6 @@
+# debug
+# set(CMAKE_BUILD_TYPE Debug)
+
 cmake_minimum_required(VERSION 3.5)
 project(my_chat CXX)
 
@@ -34,6 +37,11 @@ target_link_libraries(${PROJECT_NAME} PRIVATE Drogon::Drogon)
 
 # ##############################################################################
 
+find_package(OpenSSL REQUIRED)
+target_link_libraries(${PROJECT_NAME} PRIVATE OpenSSL::SSL)
+
+
+
 if (CMAKE_CXX_STANDARD LESS 17)
     message(FATAL_ERROR "c++17 or higher is required")
 elseif (CMAKE_CXX_STANDARD LESS 20)
@@ -69,7 +77,7 @@ target_sources(${PROJECT_NAME}
                ${MODEL_SRC})
 # ##############################################################################
 # uncomment the following line for dynamically loading views 
-# set_property(TARGET ${PROJECT_NAME} PROPERTY ENABLE_EXPORTS ON)
+set_property(TARGET ${PROJECT_NAME} PROPERTY ENABLE_EXPORTS ON)
 
 # ##############################################################################
 

@@ -9,6 +9,8 @@
 
 #include <drogon/HttpController.h>
 #include "RestfulUsersCtrlBase.h"
+#include "filters/CorsFilter.h"
+
 
 #include "Users.h"
 using namespace drogon;
@@ -26,8 +28,10 @@ class RestfulUsersCtrl: public drogon::HttpController<RestfulUsersCtrl>, public 
     ADD_METHOD_TO(RestfulUsersCtrl::updateOne,"/users/{1}",Put,Options);
     ADD_METHOD_TO(RestfulUsersCtrl::deleteOne,"/users/{1}",Delete,Options);
     ADD_METHOD_TO(RestfulUsersCtrl::get,"/users",Get,Options);
-    ADD_METHOD_TO(RestfulUsersCtrl::create,"/users",Post,Options);
-    //ADD_METHOD_TO(RestfulUsersCtrl::update,"/users",Put,Options);
+    ADD_METHOD_TO(RestfulUsersCtrl::create, "/users", Post);
+    // ADD_METHOD_TO(RestfulUsersCtrl::create, "/users", Post, Options, "CorsFilter");
+
+    // ADD_METHOD_TO(RestfulUsersCtrl::update,"/users",Put,Options);
     METHOD_LIST_END
      
     void getOne(const HttpRequestPtr &req,

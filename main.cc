@@ -26,6 +26,7 @@ void executeSchema(const std::vector<std::string>& sqlCommands) {
 }
 
 int main() {
+    
     try {
         drogon::app().loadConfigFile("../config.json");
         LOG_DEBUG << "Config file loaded successfully.";
@@ -57,13 +58,17 @@ int main() {
 
     // auto sharedService = std::make_shared<SharedStateService>();
 
+
     auto wsCtrlPtr = std::make_shared<EchoWebsock>();
     auto httpCtrlPtr = std::make_shared<ConversationCtrl>(wsCtrlPtr);
 
+    // auto corsFilter = std::make_shared<CorsFilter>();
+   
 
     // drogon::app().registerController<ConversationCtrl>(sharedService);
     drogon::app().registerController(httpCtrlPtr);
     drogon::app().registerController(wsCtrlPtr);
+
 
     // Run the Drogon application
     drogon::app().run();
