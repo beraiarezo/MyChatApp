@@ -35,23 +35,23 @@ int main() {
         return 1;
     }
 
-    std::ifstream schemaFile("../schema.sql");
-    if (!schemaFile.is_open()) {
-        std::cerr << "Failed to open schema.sql file" << std::endl;
-        return 1;
-    } else {
-        LOG_DEBUG << "schema.sql file opened successfully.";
-    }
+    // std::ifstream schemaFile("../schema.sql");
+    // if (!schemaFile.is_open()) {
+    //     std::cerr << "Failed to open schema.sql file" << std::endl;
+    //     return 1;
+    // } else {
+    //     LOG_DEBUG << "schema.sql file opened successfully.";
+    // }
 
-    std::vector<std::string> sqlCommands;
-    std::string sqlCommand;
-    while (std::getline(schemaFile, sqlCommand, ';')) {
-        if (!sqlCommand.empty()) {
-            sqlCommands.push_back(sqlCommand);
-        }
-    }
+    // std::vector<std::string> sqlCommands;
+    // std::string sqlCommand;
+    // while (std::getline(schemaFile, sqlCommand, ';')) {
+    //     if (!sqlCommand.empty()) {
+    //         sqlCommands.push_back(sqlCommand);
+    //     }
+    // }
 
-    // Register an event to run after the HTTP server has started
+    // // Register an event to run after the HTTP server has started
     // drogon::app().getLoop()->queueInLoop([sqlCommands]() {
     //     executeSchema(sqlCommands);
     // });

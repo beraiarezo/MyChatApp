@@ -7,7 +7,7 @@
 
 #include "RestfulUsersCtrl.h"
 #include <string>
-#include <bcrypt/BCrypt.hpp>
+#include <bcrypt/BCrypt.hpp> 
 
 
 void RestfulUsersCtrl::getOne(const HttpRequestPtr &req,
@@ -45,6 +45,5 @@ void RestfulUsersCtrl::create(const HttpRequestPtr &req,
     auto jsonPtr = req->getJsonObject();
     std::string hashedPassword = BCrypt::generateHash((*jsonPtr)["password_hash"].asString());
     (*jsonPtr)["password_hash"] = hashedPassword;
-
     RestfulUsersCtrlBase::create(req, std::move(callback));
 }

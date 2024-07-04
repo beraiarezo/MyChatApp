@@ -46,12 +46,12 @@
     "items": [
       {
         "type": "has many",
-        "original_table_name": "conversations",
-        "original_table_alias": "conversation",
+        "original_table_name": "chats",
+        "original_table_alias": "chat",
         "original_key": "id",
-        "target_table_name": "participants",
-        "target_table_alias": "participant",
-        "target_key": "conversation_id",
+        "target_table_name": "messages",
+        "target_table_alias": "message",
+        "target_key": "chat_id",
         "enable_reverse": false
       },
       {
@@ -66,16 +66,31 @@
       },
       {
         "type": "many to many",
-        "original_table_name": "conversations",
-        "original_table_alias": "",
+        "original_table_name": "chats",
+        "original_table_alias": "chat",
         "original_key": "id",
         "pivot_table": {
-          "table_name": "conversation_messages",
-          "original_key": "conversation_id",
-          "target_key": "message_id"
+          "table_name": "users_chats",
+          "original_key": "chat_id",
+          "target_key": "user_id"
         },
-        "target_table_name": "messages",
-        "target_table_alias": "messages",
+        "target_table_name": "users",
+        "target_table_alias": "user",
+        "target_key": "id",
+        "enable_reverse": false
+      },
+      {
+        "type": "many to many",
+        "original_table_name": "groups",
+        "original_table_alias": "group",
+        "original_key": "id",
+        "pivot_table": {
+          "table_name": "users_groups",
+          "original_key": "group_id",
+          "target_key": "user_id"
+        },
+        "target_table_name": "users",
+        "target_table_alias": "user",
         "target_key": "id",
         "enable_reverse": false
       }

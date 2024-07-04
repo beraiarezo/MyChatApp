@@ -14,6 +14,8 @@ using namespace drogon::orm;
 using namespace drogon_model::chat;
 
 const std::string Messages::Cols::_id = "id";
+const std::string Messages::Cols::_chat_id = "chat_id";
+const std::string Messages::Cols::_group_id = "group_id";
 const std::string Messages::Cols::_sender_id = "sender_id";
 const std::string Messages::Cols::_content = "content";
 const std::string Messages::Cols::_created_at = "created_at";
@@ -23,6 +25,8 @@ const std::string Messages::tableName = "messages";
 
 const std::vector<typename Messages::MetaData> Messages::metaData_={
 {"id","std::string","uuid",0,0,1,1},
+{"chat_id","std::string","uuid",0,0,0,0},
+{"group_id","std::string","uuid",0,0,0,0},
 {"sender_id","std::string","uuid",0,0,0,1},
 {"content","std::string","text",0,0,0,1},
 {"created_at","::trantor::Date","timestamp with time zone",0,0,0,1}
@@ -39,6 +43,14 @@ Messages::Messages(const Row &r, const ssize_t indexOffset) noexcept
         if(!r["id"].isNull())
         {
             id_=std::make_shared<std::string>(r["id"].as<std::string>());
+        }
+        if(!r["chat_id"].isNull())
+        {
+            chatId_=std::make_shared<std::string>(r["chat_id"].as<std::string>());
+        }
+        if(!r["group_id"].isNull())
+        {
+            groupId_=std::make_shared<std::string>(r["group_id"].as<std::string>());
         }
         if(!r["sender_id"].isNull())
         {
@@ -74,7 +86,7 @@ Messages::Messages(const Row &r, const ssize_t indexOffset) noexcept
     else
     {
         size_t offset = (size_t)indexOffset;
-        if(offset + 4 > r.size())
+        if(offset + 6 > r.size())
         {
             LOG_FATAL << "Invalid SQL result for this model";
             return;
@@ -88,14 +100,24 @@ Messages::Messages(const Row &r, const ssize_t indexOffset) noexcept
         index = offset + 1;
         if(!r[index].isNull())
         {
-            senderId_=std::make_shared<std::string>(r[index].as<std::string>());
+            chatId_=std::make_shared<std::string>(r[index].as<std::string>());
         }
         index = offset + 2;
         if(!r[index].isNull())
         {
-            content_=std::make_shared<std::string>(r[index].as<std::string>());
+            groupId_=std::make_shared<std::string>(r[index].as<std::string>());
         }
         index = offset + 3;
+        if(!r[index].isNull())
+        {
+            senderId_=std::make_shared<std::string>(r[index].as<std::string>());
+        }
+        index = offset + 4;
+        if(!r[index].isNull())
+        {
+            content_=std::make_shared<std::string>(r[index].as<std::string>());
+        }
+        index = offset + 5;
         if(!r[index].isNull())
         {
             auto timeStr = r[index].as<std::string>();
@@ -124,7 +146,7 @@ Messages::Messages(const Row &r, const ssize_t indexOffset) noexcept
 
 Messages::Messages(const Json::Value &pJson, const std::vector<std::string> &pMasqueradingVector) noexcept(false)
 {
-    if(pMasqueradingVector.size() != 4)
+    if(pMasqueradingVector.size() != 6)
     {
         LOG_ERROR << "Bad masquerading vector";
         return;
@@ -142,7 +164,7 @@ Messages::Messages(const Json::Value &pJson, const std::vector<std::string> &pMa
         dirtyFlag_[1] = true;
         if(!pJson[pMasqueradingVector[1]].isNull())
         {
-            senderId_=std::make_shared<std::string>(pJson[pMasqueradingVector[1]].asString());
+            chatId_=std::make_shared<std::string>(pJson[pMasqueradingVector[1]].asString());
         }
     }
     if(!pMasqueradingVector[2].empty() && pJson.isMember(pMasqueradingVector[2]))
@@ -150,7 +172,7 @@ Messages::Messages(const Json::Value &pJson, const std::vector<std::string> &pMa
         dirtyFlag_[2] = true;
         if(!pJson[pMasqueradingVector[2]].isNull())
         {
-            content_=std::make_shared<std::string>(pJson[pMasqueradingVector[2]].asString());
+            groupId_=std::make_shared<std::string>(pJson[pMasqueradingVector[2]].asString());
         }
     }
     if(!pMasqueradingVector[3].empty() && pJson.isMember(pMasqueradingVector[3]))
@@ -158,7 +180,23 @@ Messages::Messages(const Json::Value &pJson, const std::vector<std::string> &pMa
         dirtyFlag_[3] = true;
         if(!pJson[pMasqueradingVector[3]].isNull())
         {
-            auto timeStr = pJson[pMasqueradingVector[3]].asString();
+            senderId_=std::make_shared<std::string>(pJson[pMasqueradingVector[3]].asString());
+        }
+    }
+    if(!pMasqueradingVector[4].empty() && pJson.isMember(pMasqueradingVector[4]))
+    {
+        dirtyFlag_[4] = true;
+        if(!pJson[pMasqueradingVector[4]].isNull())
+        {
+            content_=std::make_shared<std::string>(pJson[pMasqueradingVector[4]].asString());
+        }
+    }
+    if(!pMasqueradingVector[5].empty() && pJson.isMember(pMasqueradingVector[5]))
+    {
+        dirtyFlag_[5] = true;
+        if(!pJson[pMasqueradingVector[5]].isNull())
+        {
+            auto timeStr = pJson[pMasqueradingVector[5]].asString();
             struct tm stm;
             memset(&stm,0,sizeof(stm));
             auto p = strptime(timeStr.c_str(),"%Y-%m-%d %H:%M:%S",&stm);
@@ -191,9 +229,25 @@ Messages::Messages(const Json::Value &pJson) noexcept(false)
             id_=std::make_shared<std::string>(pJson["id"].asString());
         }
     }
-    if(pJson.isMember("sender_id"))
+    if(pJson.isMember("chat_id"))
     {
         dirtyFlag_[1]=true;
+        if(!pJson["chat_id"].isNull())
+        {
+            chatId_=std::make_shared<std::string>(pJson["chat_id"].asString());
+        }
+    }
+    if(pJson.isMember("group_id"))
+    {
+        dirtyFlag_[2]=true;
+        if(!pJson["group_id"].isNull())
+        {
+            groupId_=std::make_shared<std::string>(pJson["group_id"].asString());
+        }
+    }
+    if(pJson.isMember("sender_id"))
+    {
+        dirtyFlag_[3]=true;
         if(!pJson["sender_id"].isNull())
         {
             senderId_=std::make_shared<std::string>(pJson["sender_id"].asString());
@@ -201,7 +255,7 @@ Messages::Messages(const Json::Value &pJson) noexcept(false)
     }
     if(pJson.isMember("content"))
     {
-        dirtyFlag_[2]=true;
+        dirtyFlag_[4]=true;
         if(!pJson["content"].isNull())
         {
             content_=std::make_shared<std::string>(pJson["content"].asString());
@@ -209,7 +263,7 @@ Messages::Messages(const Json::Value &pJson) noexcept(false)
     }
     if(pJson.isMember("created_at"))
     {
-        dirtyFlag_[3]=true;
+        dirtyFlag_[5]=true;
         if(!pJson["created_at"].isNull())
         {
             auto timeStr = pJson["created_at"].asString();
@@ -238,7 +292,7 @@ Messages::Messages(const Json::Value &pJson) noexcept(false)
 void Messages::updateByMasqueradedJson(const Json::Value &pJson,
                                             const std::vector<std::string> &pMasqueradingVector) noexcept(false)
 {
-    if(pMasqueradingVector.size() != 4)
+    if(pMasqueradingVector.size() != 6)
     {
         LOG_ERROR << "Bad masquerading vector";
         return;
@@ -255,7 +309,7 @@ void Messages::updateByMasqueradedJson(const Json::Value &pJson,
         dirtyFlag_[1] = true;
         if(!pJson[pMasqueradingVector[1]].isNull())
         {
-            senderId_=std::make_shared<std::string>(pJson[pMasqueradingVector[1]].asString());
+            chatId_=std::make_shared<std::string>(pJson[pMasqueradingVector[1]].asString());
         }
     }
     if(!pMasqueradingVector[2].empty() && pJson.isMember(pMasqueradingVector[2]))
@@ -263,7 +317,7 @@ void Messages::updateByMasqueradedJson(const Json::Value &pJson,
         dirtyFlag_[2] = true;
         if(!pJson[pMasqueradingVector[2]].isNull())
         {
-            content_=std::make_shared<std::string>(pJson[pMasqueradingVector[2]].asString());
+            groupId_=std::make_shared<std::string>(pJson[pMasqueradingVector[2]].asString());
         }
     }
     if(!pMasqueradingVector[3].empty() && pJson.isMember(pMasqueradingVector[3]))
@@ -271,7 +325,23 @@ void Messages::updateByMasqueradedJson(const Json::Value &pJson,
         dirtyFlag_[3] = true;
         if(!pJson[pMasqueradingVector[3]].isNull())
         {
-            auto timeStr = pJson[pMasqueradingVector[3]].asString();
+            senderId_=std::make_shared<std::string>(pJson[pMasqueradingVector[3]].asString());
+        }
+    }
+    if(!pMasqueradingVector[4].empty() && pJson.isMember(pMasqueradingVector[4]))
+    {
+        dirtyFlag_[4] = true;
+        if(!pJson[pMasqueradingVector[4]].isNull())
+        {
+            content_=std::make_shared<std::string>(pJson[pMasqueradingVector[4]].asString());
+        }
+    }
+    if(!pMasqueradingVector[5].empty() && pJson.isMember(pMasqueradingVector[5]))
+    {
+        dirtyFlag_[5] = true;
+        if(!pJson[pMasqueradingVector[5]].isNull())
+        {
+            auto timeStr = pJson[pMasqueradingVector[5]].asString();
             struct tm stm;
             memset(&stm,0,sizeof(stm));
             auto p = strptime(timeStr.c_str(),"%Y-%m-%d %H:%M:%S",&stm);
@@ -303,9 +373,25 @@ void Messages::updateByJson(const Json::Value &pJson) noexcept(false)
             id_=std::make_shared<std::string>(pJson["id"].asString());
         }
     }
-    if(pJson.isMember("sender_id"))
+    if(pJson.isMember("chat_id"))
     {
         dirtyFlag_[1] = true;
+        if(!pJson["chat_id"].isNull())
+        {
+            chatId_=std::make_shared<std::string>(pJson["chat_id"].asString());
+        }
+    }
+    if(pJson.isMember("group_id"))
+    {
+        dirtyFlag_[2] = true;
+        if(!pJson["group_id"].isNull())
+        {
+            groupId_=std::make_shared<std::string>(pJson["group_id"].asString());
+        }
+    }
+    if(pJson.isMember("sender_id"))
+    {
+        dirtyFlag_[3] = true;
         if(!pJson["sender_id"].isNull())
         {
             senderId_=std::make_shared<std::string>(pJson["sender_id"].asString());
@@ -313,7 +399,7 @@ void Messages::updateByJson(const Json::Value &pJson) noexcept(false)
     }
     if(pJson.isMember("content"))
     {
-        dirtyFlag_[2] = true;
+        dirtyFlag_[4] = true;
         if(!pJson["content"].isNull())
         {
             content_=std::make_shared<std::string>(pJson["content"].asString());
@@ -321,7 +407,7 @@ void Messages::updateByJson(const Json::Value &pJson) noexcept(false)
     }
     if(pJson.isMember("created_at"))
     {
-        dirtyFlag_[3] = true;
+        dirtyFlag_[5] = true;
         if(!pJson["created_at"].isNull())
         {
             auto timeStr = pJson["created_at"].asString();
@@ -374,6 +460,60 @@ const typename Messages::PrimaryKeyType & Messages::getPrimaryKey() const
     return *id_;
 }
 
+const std::string &Messages::getValueOfChatId() const noexcept
+{
+    static const std::string defaultValue = std::string();
+    if(chatId_)
+        return *chatId_;
+    return defaultValue;
+}
+const std::shared_ptr<std::string> &Messages::getChatId() const noexcept
+{
+    return chatId_;
+}
+void Messages::setChatId(const std::string &pChatId) noexcept
+{
+    chatId_ = std::make_shared<std::string>(pChatId);
+    dirtyFlag_[1] = true;
+}
+void Messages::setChatId(std::string &&pChatId) noexcept
+{
+    chatId_ = std::make_shared<std::string>(std::move(pChatId));
+    dirtyFlag_[1] = true;
+}
+void Messages::setChatIdToNull() noexcept
+{
+    chatId_.reset();
+    dirtyFlag_[1] = true;
+}
+
+const std::string &Messages::getValueOfGroupId() const noexcept
+{
+    static const std::string defaultValue = std::string();
+    if(groupId_)
+        return *groupId_;
+    return defaultValue;
+}
+const std::shared_ptr<std::string> &Messages::getGroupId() const noexcept
+{
+    return groupId_;
+}
+void Messages::setGroupId(const std::string &pGroupId) noexcept
+{
+    groupId_ = std::make_shared<std::string>(pGroupId);
+    dirtyFlag_[2] = true;
+}
+void Messages::setGroupId(std::string &&pGroupId) noexcept
+{
+    groupId_ = std::make_shared<std::string>(std::move(pGroupId));
+    dirtyFlag_[2] = true;
+}
+void Messages::setGroupIdToNull() noexcept
+{
+    groupId_.reset();
+    dirtyFlag_[2] = true;
+}
+
 const std::string &Messages::getValueOfSenderId() const noexcept
 {
     static const std::string defaultValue = std::string();
@@ -388,12 +528,12 @@ const std::shared_ptr<std::string> &Messages::getSenderId() const noexcept
 void Messages::setSenderId(const std::string &pSenderId) noexcept
 {
     senderId_ = std::make_shared<std::string>(pSenderId);
-    dirtyFlag_[1] = true;
+    dirtyFlag_[3] = true;
 }
 void Messages::setSenderId(std::string &&pSenderId) noexcept
 {
     senderId_ = std::make_shared<std::string>(std::move(pSenderId));
-    dirtyFlag_[1] = true;
+    dirtyFlag_[3] = true;
 }
 
 const std::string &Messages::getValueOfContent() const noexcept
@@ -410,12 +550,12 @@ const std::shared_ptr<std::string> &Messages::getContent() const noexcept
 void Messages::setContent(const std::string &pContent) noexcept
 {
     content_ = std::make_shared<std::string>(pContent);
-    dirtyFlag_[2] = true;
+    dirtyFlag_[4] = true;
 }
 void Messages::setContent(std::string &&pContent) noexcept
 {
     content_ = std::make_shared<std::string>(std::move(pContent));
-    dirtyFlag_[2] = true;
+    dirtyFlag_[4] = true;
 }
 
 const ::trantor::Date &Messages::getValueOfCreatedAt() const noexcept
@@ -432,7 +572,7 @@ const std::shared_ptr<::trantor::Date> &Messages::getCreatedAt() const noexcept
 void Messages::setCreatedAt(const ::trantor::Date &pCreatedAt) noexcept
 {
     createdAt_ = std::make_shared<::trantor::Date>(pCreatedAt);
-    dirtyFlag_[3] = true;
+    dirtyFlag_[5] = true;
 }
 
 void Messages::updateId(const uint64_t id)
@@ -443,6 +583,8 @@ const std::vector<std::string> &Messages::insertColumns() noexcept
 {
     static const std::vector<std::string> inCols={
         "id",
+        "chat_id",
+        "group_id",
         "sender_id",
         "content",
         "created_at"
@@ -465,6 +607,28 @@ void Messages::outputArgs(drogon::orm::internal::SqlBinder &binder) const
     }
     if(dirtyFlag_[1])
     {
+        if(getChatId())
+        {
+            binder << getValueOfChatId();
+        }
+        else
+        {
+            binder << nullptr;
+        }
+    }
+    if(dirtyFlag_[2])
+    {
+        if(getGroupId())
+        {
+            binder << getValueOfGroupId();
+        }
+        else
+        {
+            binder << nullptr;
+        }
+    }
+    if(dirtyFlag_[3])
+    {
         if(getSenderId())
         {
             binder << getValueOfSenderId();
@@ -474,7 +638,7 @@ void Messages::outputArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if(dirtyFlag_[2])
+    if(dirtyFlag_[4])
     {
         if(getContent())
         {
@@ -485,7 +649,7 @@ void Messages::outputArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if(dirtyFlag_[3])
+    if(dirtyFlag_[5])
     {
         if(getCreatedAt())
         {
@@ -517,6 +681,14 @@ const std::vector<std::string> Messages::updateColumns() const
     {
         ret.push_back(getColumnName(3));
     }
+    if(dirtyFlag_[4])
+    {
+        ret.push_back(getColumnName(4));
+    }
+    if(dirtyFlag_[5])
+    {
+        ret.push_back(getColumnName(5));
+    }
     return ret;
 }
 
@@ -535,6 +707,28 @@ void Messages::updateArgs(drogon::orm::internal::SqlBinder &binder) const
     }
     if(dirtyFlag_[1])
     {
+        if(getChatId())
+        {
+            binder << getValueOfChatId();
+        }
+        else
+        {
+            binder << nullptr;
+        }
+    }
+    if(dirtyFlag_[2])
+    {
+        if(getGroupId())
+        {
+            binder << getValueOfGroupId();
+        }
+        else
+        {
+            binder << nullptr;
+        }
+    }
+    if(dirtyFlag_[3])
+    {
         if(getSenderId())
         {
             binder << getValueOfSenderId();
@@ -544,7 +738,7 @@ void Messages::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if(dirtyFlag_[2])
+    if(dirtyFlag_[4])
     {
         if(getContent())
         {
@@ -555,7 +749,7 @@ void Messages::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
-    if(dirtyFlag_[3])
+    if(dirtyFlag_[5])
     {
         if(getCreatedAt())
         {
@@ -577,6 +771,22 @@ Json::Value Messages::toJson() const
     else
     {
         ret["id"]=Json::Value();
+    }
+    if(getChatId())
+    {
+        ret["chat_id"]=getValueOfChatId();
+    }
+    else
+    {
+        ret["chat_id"]=Json::Value();
+    }
+    if(getGroupId())
+    {
+        ret["group_id"]=getValueOfGroupId();
+    }
+    else
+    {
+        ret["group_id"]=Json::Value();
     }
     if(getSenderId())
     {
@@ -609,7 +819,7 @@ Json::Value Messages::toMasqueradedJson(
     const std::vector<std::string> &pMasqueradingVector) const
 {
     Json::Value ret;
-    if(pMasqueradingVector.size() == 4)
+    if(pMasqueradingVector.size() == 6)
     {
         if(!pMasqueradingVector[0].empty())
         {
@@ -624,9 +834,9 @@ Json::Value Messages::toMasqueradedJson(
         }
         if(!pMasqueradingVector[1].empty())
         {
-            if(getSenderId())
+            if(getChatId())
             {
-                ret[pMasqueradingVector[1]]=getValueOfSenderId();
+                ret[pMasqueradingVector[1]]=getValueOfChatId();
             }
             else
             {
@@ -635,9 +845,9 @@ Json::Value Messages::toMasqueradedJson(
         }
         if(!pMasqueradingVector[2].empty())
         {
-            if(getContent())
+            if(getGroupId())
             {
-                ret[pMasqueradingVector[2]]=getValueOfContent();
+                ret[pMasqueradingVector[2]]=getValueOfGroupId();
             }
             else
             {
@@ -646,13 +856,35 @@ Json::Value Messages::toMasqueradedJson(
         }
         if(!pMasqueradingVector[3].empty())
         {
-            if(getCreatedAt())
+            if(getSenderId())
             {
-                ret[pMasqueradingVector[3]]=getCreatedAt()->toDbStringLocal();
+                ret[pMasqueradingVector[3]]=getValueOfSenderId();
             }
             else
             {
                 ret[pMasqueradingVector[3]]=Json::Value();
+            }
+        }
+        if(!pMasqueradingVector[4].empty())
+        {
+            if(getContent())
+            {
+                ret[pMasqueradingVector[4]]=getValueOfContent();
+            }
+            else
+            {
+                ret[pMasqueradingVector[4]]=Json::Value();
+            }
+        }
+        if(!pMasqueradingVector[5].empty())
+        {
+            if(getCreatedAt())
+            {
+                ret[pMasqueradingVector[5]]=getCreatedAt()->toDbStringLocal();
+            }
+            else
+            {
+                ret[pMasqueradingVector[5]]=Json::Value();
             }
         }
         return ret;
@@ -665,6 +897,22 @@ Json::Value Messages::toMasqueradedJson(
     else
     {
         ret["id"]=Json::Value();
+    }
+    if(getChatId())
+    {
+        ret["chat_id"]=getValueOfChatId();
+    }
+    else
+    {
+        ret["chat_id"]=Json::Value();
+    }
+    if(getGroupId())
+    {
+        ret["group_id"]=getValueOfGroupId();
+    }
+    else
+    {
+        ret["group_id"]=Json::Value();
     }
     if(getSenderId())
     {
@@ -700,9 +948,19 @@ bool Messages::validateJsonForCreation(const Json::Value &pJson, std::string &er
         if(!validJsonOfField(0, "id", pJson["id"], err, true))
             return false;
     }
+    if(pJson.isMember("chat_id"))
+    {
+        if(!validJsonOfField(1, "chat_id", pJson["chat_id"], err, true))
+            return false;
+    }
+    if(pJson.isMember("group_id"))
+    {
+        if(!validJsonOfField(2, "group_id", pJson["group_id"], err, true))
+            return false;
+    }
     if(pJson.isMember("sender_id"))
     {
-        if(!validJsonOfField(1, "sender_id", pJson["sender_id"], err, true))
+        if(!validJsonOfField(3, "sender_id", pJson["sender_id"], err, true))
             return false;
     }
     else
@@ -712,7 +970,7 @@ bool Messages::validateJsonForCreation(const Json::Value &pJson, std::string &er
     }
     if(pJson.isMember("content"))
     {
-        if(!validJsonOfField(2, "content", pJson["content"], err, true))
+        if(!validJsonOfField(4, "content", pJson["content"], err, true))
             return false;
     }
     else
@@ -722,7 +980,7 @@ bool Messages::validateJsonForCreation(const Json::Value &pJson, std::string &er
     }
     if(pJson.isMember("created_at"))
     {
-        if(!validJsonOfField(3, "created_at", pJson["created_at"], err, true))
+        if(!validJsonOfField(5, "created_at", pJson["created_at"], err, true))
             return false;
     }
     return true;
@@ -731,7 +989,7 @@ bool Messages::validateMasqueradedJsonForCreation(const Json::Value &pJson,
                                                   const std::vector<std::string> &pMasqueradingVector,
                                                   std::string &err)
 {
-    if(pMasqueradingVector.size() != 4)
+    if(pMasqueradingVector.size() != 6)
     {
         err = "Bad masquerading vector";
         return false;
@@ -752,11 +1010,6 @@ bool Messages::validateMasqueradedJsonForCreation(const Json::Value &pJson,
               if(!validJsonOfField(1, pMasqueradingVector[1], pJson[pMasqueradingVector[1]], err, true))
                   return false;
           }
-        else
-        {
-            err="The " + pMasqueradingVector[1] + " column cannot be null";
-            return false;
-        }
       }
       if(!pMasqueradingVector[2].empty())
       {
@@ -765,17 +1018,38 @@ bool Messages::validateMasqueradedJsonForCreation(const Json::Value &pJson,
               if(!validJsonOfField(2, pMasqueradingVector[2], pJson[pMasqueradingVector[2]], err, true))
                   return false;
           }
-        else
-        {
-            err="The " + pMasqueradingVector[2] + " column cannot be null";
-            return false;
-        }
       }
       if(!pMasqueradingVector[3].empty())
       {
           if(pJson.isMember(pMasqueradingVector[3]))
           {
               if(!validJsonOfField(3, pMasqueradingVector[3], pJson[pMasqueradingVector[3]], err, true))
+                  return false;
+          }
+        else
+        {
+            err="The " + pMasqueradingVector[3] + " column cannot be null";
+            return false;
+        }
+      }
+      if(!pMasqueradingVector[4].empty())
+      {
+          if(pJson.isMember(pMasqueradingVector[4]))
+          {
+              if(!validJsonOfField(4, pMasqueradingVector[4], pJson[pMasqueradingVector[4]], err, true))
+                  return false;
+          }
+        else
+        {
+            err="The " + pMasqueradingVector[4] + " column cannot be null";
+            return false;
+        }
+      }
+      if(!pMasqueradingVector[5].empty())
+      {
+          if(pJson.isMember(pMasqueradingVector[5]))
+          {
+              if(!validJsonOfField(5, pMasqueradingVector[5], pJson[pMasqueradingVector[5]], err, true))
                   return false;
           }
       }
@@ -799,19 +1073,29 @@ bool Messages::validateJsonForUpdate(const Json::Value &pJson, std::string &err)
         err = "The value of primary key must be set in the json object for update";
         return false;
     }
+    if(pJson.isMember("chat_id"))
+    {
+        if(!validJsonOfField(1, "chat_id", pJson["chat_id"], err, false))
+            return false;
+    }
+    if(pJson.isMember("group_id"))
+    {
+        if(!validJsonOfField(2, "group_id", pJson["group_id"], err, false))
+            return false;
+    }
     if(pJson.isMember("sender_id"))
     {
-        if(!validJsonOfField(1, "sender_id", pJson["sender_id"], err, false))
+        if(!validJsonOfField(3, "sender_id", pJson["sender_id"], err, false))
             return false;
     }
     if(pJson.isMember("content"))
     {
-        if(!validJsonOfField(2, "content", pJson["content"], err, false))
+        if(!validJsonOfField(4, "content", pJson["content"], err, false))
             return false;
     }
     if(pJson.isMember("created_at"))
     {
-        if(!validJsonOfField(3, "created_at", pJson["created_at"], err, false))
+        if(!validJsonOfField(5, "created_at", pJson["created_at"], err, false))
             return false;
     }
     return true;
@@ -820,7 +1104,7 @@ bool Messages::validateMasqueradedJsonForUpdate(const Json::Value &pJson,
                                                 const std::vector<std::string> &pMasqueradingVector,
                                                 std::string &err)
 {
-    if(pMasqueradingVector.size() != 4)
+    if(pMasqueradingVector.size() != 6)
     {
         err = "Bad masquerading vector";
         return false;
@@ -849,6 +1133,16 @@ bool Messages::validateMasqueradedJsonForUpdate(const Json::Value &pJson,
       if(!pMasqueradingVector[3].empty() && pJson.isMember(pMasqueradingVector[3]))
       {
           if(!validJsonOfField(3, pMasqueradingVector[3], pJson[pMasqueradingVector[3]], err, false))
+              return false;
+      }
+      if(!pMasqueradingVector[4].empty() && pJson.isMember(pMasqueradingVector[4]))
+      {
+          if(!validJsonOfField(4, pMasqueradingVector[4], pJson[pMasqueradingVector[4]], err, false))
+              return false;
+      }
+      if(!pMasqueradingVector[5].empty() && pJson.isMember(pMasqueradingVector[5]))
+      {
+          if(!validJsonOfField(5, pMasqueradingVector[5], pJson[pMasqueradingVector[5]], err, false))
               return false;
       }
     }
@@ -882,8 +1176,7 @@ bool Messages::validJsonOfField(size_t index,
         case 1:
             if(pJson.isNull())
             {
-                err="The " + fieldName + " column cannot be null";
-                return false;
+                return true;
             }
             if(!pJson.isString())
             {
@@ -892,6 +1185,17 @@ bool Messages::validJsonOfField(size_t index,
             }
             break;
         case 2:
+            if(pJson.isNull())
+            {
+                return true;
+            }
+            if(!pJson.isString())
+            {
+                err="Type error in the "+fieldName+" field";
+                return false;
+            }
+            break;
+        case 3:
             if(pJson.isNull())
             {
                 err="The " + fieldName + " column cannot be null";
@@ -903,7 +1207,19 @@ bool Messages::validJsonOfField(size_t index,
                 return false;
             }
             break;
-        case 3:
+        case 4:
+            if(pJson.isNull())
+            {
+                err="The " + fieldName + " column cannot be null";
+                return false;
+            }
+            if(!pJson.isString())
+            {
+                err="Type error in the "+fieldName+" field";
+                return false;
+            }
+            break;
+        case 5:
             if(pJson.isNull())
             {
                 err="The " + fieldName + " column cannot be null";

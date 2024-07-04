@@ -10,21 +10,27 @@ void AuthCtrl::login(const HttpRequestPtr &req, std::function<void(const HttpRes
     {
         auto resp = HttpResponse::newHttpJsonResponse(Json::Value("Invalid credentials"));
         resp->setStatusCode(k400BadRequest);
+        resp->addHeader("Access-Control-Allow-Origin", "*"); // or specify a specific origin
         callback(resp);
         return;
     }
 
     std::string email = (*jsonPtr)["email"].asString();
     std::string password = (*jsonPtr)["password_hash"].asString();
-
+    std::cout << email << "---- email";
     auto dbClientPtr = app().getDbClient();
     drogon::orm::Mapper<Users> mapper(dbClientPtr);
+    
+    
+
+    // auto criteria = drogon::orm::Criteria(Users::Cols::_email, drogon::orm::CompareOperator::EQ, email);
 
     mapper.findBy(drogon::orm::Criteria(Users::Cols::_email, drogon::orm::CompareOperator::EQ, email),
         [req, email, password, callback, this](const std::vector<Users> &users) {
             if (users.empty())
             {
                 auto resp = HttpResponse::newHttpJsonResponse(Json::Value("User not found"));
+                resp->addHeader("Access-Control-Allow-Origin", "*"); // or specify a specific origin
                 resp->setStatusCode(k404NotFound);
                 callback(resp);
                 return;
@@ -32,11 +38,12 @@ void AuthCtrl::login(const HttpRequestPtr &req, std::function<void(const HttpRes
 
             const auto &user = users.front();
             std::string storedPasswordHash = user.getValueOfPasswordHash();
+            std::cout << storedPasswordHash << " ---- storedPasswordHash"<< "   -----   "<<password;
 
-            
             if (!BCrypt::validatePassword(password, storedPasswordHash)) // Verify password
             {
                 auto resp = HttpResponse::newHttpJsonResponse(Json::Value("Invalid credentials"));
+                resp->addHeader("Access-Control-Allow-Origin", "*"); // or specify a specific origin
                 resp->setStatusCode(k401Unauthorized);
                 callback(resp);
                 return;
@@ -47,7 +54,9 @@ void AuthCtrl::login(const HttpRequestPtr &req, std::function<void(const HttpRes
 
             Json::Value ret;
             ret["token"] = token;
+            ret["user"] = user.toJson();
             auto resp = HttpResponse::newHttpJsonResponse(ret);
+            resp->addHeader("Access-Control-Allow-Origin", "*"); // or specify a specific origin
             callback(resp);
         },
         [callback](const DrogonDbException &e) {
@@ -55,6 +64,7 @@ void AuthCtrl::login(const HttpRequestPtr &req, std::function<void(const HttpRes
             Json::Value ret;
             ret["error"] = "database error";
             auto resp = HttpResponse::newHttpJsonResponse(ret);
+            resp->addHeader("Access-Control-Allow-Origin", "*"); // or specify a specific origin
             resp->setStatusCode(k500InternalServerError);
             callback(resp);
         });
@@ -71,4 +81,8 @@ std::string AuthCtrl::createJwtToken(const Users &user)
                     .sign(jwt::algorithm::hs256{"secret"});
     return token;
 }
+
+
+
+
 

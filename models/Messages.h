@@ -45,6 +45,8 @@ class Messages
     struct Cols
     {
         static const std::string _id;
+        static const std::string _chat_id;
+        static const std::string _group_id;
         static const std::string _sender_id;
         static const std::string _content;
         static const std::string _created_at;
@@ -108,6 +110,26 @@ class Messages
     void setId(const std::string &pId) noexcept;
     void setId(std::string &&pId) noexcept;
 
+    /**  For column chat_id  */
+    ///Get the value of the column chat_id, returns the default value if the column is null
+    const std::string &getValueOfChatId() const noexcept;
+    ///Return a shared_ptr object pointing to the column const value, or an empty shared_ptr object if the column is null
+    const std::shared_ptr<std::string> &getChatId() const noexcept;
+    ///Set the value of the column chat_id
+    void setChatId(const std::string &pChatId) noexcept;
+    void setChatId(std::string &&pChatId) noexcept;
+    void setChatIdToNull() noexcept;
+
+    /**  For column group_id  */
+    ///Get the value of the column group_id, returns the default value if the column is null
+    const std::string &getValueOfGroupId() const noexcept;
+    ///Return a shared_ptr object pointing to the column const value, or an empty shared_ptr object if the column is null
+    const std::shared_ptr<std::string> &getGroupId() const noexcept;
+    ///Set the value of the column group_id
+    void setGroupId(const std::string &pGroupId) noexcept;
+    void setGroupId(std::string &&pGroupId) noexcept;
+    void setGroupIdToNull() noexcept;
+
     /**  For column sender_id  */
     ///Get the value of the column sender_id, returns the default value if the column is null
     const std::string &getValueOfSenderId() const noexcept;
@@ -135,7 +157,7 @@ class Messages
     void setCreatedAt(const ::trantor::Date &pCreatedAt) noexcept;
 
 
-    static size_t getColumnNumber() noexcept {  return 4;  }
+    static size_t getColumnNumber() noexcept {  return 6;  }
     static const std::string &getColumnName(size_t index) noexcept(false);
 
     Json::Value toJson() const;
@@ -157,6 +179,8 @@ class Messages
     ///For mysql or sqlite3
     void updateId(const uint64_t id);
     std::shared_ptr<std::string> id_;
+    std::shared_ptr<std::string> chatId_;
+    std::shared_ptr<std::string> groupId_;
     std::shared_ptr<std::string> senderId_;
     std::shared_ptr<std::string> content_;
     std::shared_ptr<::trantor::Date> createdAt_;
@@ -171,7 +195,7 @@ class Messages
         const bool notNull_;
     };
     static const std::vector<MetaData> metaData_;
-    bool dirtyFlag_[4]={ false };
+    bool dirtyFlag_[6]={ false };
   public:
     static const std::string &sqlForFindingByPrimaryKey()
     {
@@ -197,17 +221,27 @@ class Messages
         }
         if(dirtyFlag_[1])
         {
-            sql += "sender_id,";
+            sql += "chat_id,";
             ++parametersCount;
         }
         if(dirtyFlag_[2])
+        {
+            sql += "group_id,";
+            ++parametersCount;
+        }
+        if(dirtyFlag_[3])
+        {
+            sql += "sender_id,";
+            ++parametersCount;
+        }
+        if(dirtyFlag_[4])
         {
             sql += "content,";
             ++parametersCount;
         }
         sql += "created_at,";
         ++parametersCount;
-        if(!dirtyFlag_[3])
+        if(!dirtyFlag_[5])
         {
             needSelection=true;
         }
@@ -242,6 +276,16 @@ class Messages
             sql.append(placeholderStr, n);
         }
         if(dirtyFlag_[3])
+        {
+            n = snprintf(placeholderStr,sizeof(placeholderStr),"$%d,",placeholder++);
+            sql.append(placeholderStr, n);
+        }
+        if(dirtyFlag_[4])
+        {
+            n = snprintf(placeholderStr,sizeof(placeholderStr),"$%d,",placeholder++);
+            sql.append(placeholderStr, n);
+        }
+        if(dirtyFlag_[5])
         {
             n = snprintf(placeholderStr,sizeof(placeholderStr),"$%d,",placeholder++);
             sql.append(placeholderStr, n);

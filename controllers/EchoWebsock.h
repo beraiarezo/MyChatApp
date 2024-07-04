@@ -3,13 +3,24 @@
 #include <drogon/WebSocketController.h>
 #include <shared_mutex>
 #include <mutex>
-
+#include "models/Users.h"
 
 using mutex_type = std::shared_mutex;
 using read_only_lock = std::shared_lock<mutex_type>;
 using updatable_lock = std::unique_lock<mutex_type>;
 
 using namespace drogon;
+using namespace drogon::orm;
+using namespace drogon_model::chat;
+
+
+struct UserData {
+    drogon::WebSocketConnectionPtr connection;
+    std::string id;
+    std::string name;
+    std::string email;
+    // Add other user-related fields as needed
+};
 
 class EchoWebsock : public drogon::WebSocketController<EchoWebsock, false>
 {
@@ -28,7 +39,11 @@ class EchoWebsock : public drogon::WebSocketController<EchoWebsock, false>
     WS_PATH_LIST_END
 
 
-    std::unordered_map<std::string, drogon::WebSocketConnectionPtr> getUserConnections() {
+    orm::DbClientPtr getDbClient() {
+      return drogon::app().getDbClient("default");
+    }
+
+    std::unordered_map<std::string, UserData> getUserConnections() {
       read_only_lock lock(connectionsMutex_);
       return userConnections_;
     }
@@ -38,7 +53,7 @@ class EchoWebsock : public drogon::WebSocketController<EchoWebsock, false>
     }
 
     private:
-      std::unordered_map<std::string, drogon::WebSocketConnectionPtr> userConnections_;
+      std::unordered_map<std::string, UserData> userConnections_;
       mutex_type connectionsMutex_;
 };
 

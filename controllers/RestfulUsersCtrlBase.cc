@@ -19,6 +19,7 @@ void RestfulUsersCtrlBase::getOne(const HttpRequestPtr &req,
         std::make_shared<std::function<void(const HttpResponsePtr &)>>(
             std::move(callback));
     drogon::orm::Mapper<Users> mapper(dbClientPtr);
+    
     mapper.findByPrimaryKey(
         id,
         [req, callbackPtr, this](Users r) {
@@ -348,9 +349,7 @@ void RestfulUsersCtrlBase::create(const HttpRequestPtr &req,
         Json::Value ret;
         ret["error"] = err;
         auto resp= HttpResponse::newHttpJsonResponse(ret);
-        resp->addHeader("Access-Control-Allow-Origin", "*"); // or specify a specific origin
         resp->setStatusCode(k400BadRequest);
-
         callback(resp);
         return;
     }
@@ -361,7 +360,6 @@ void RestfulUsersCtrlBase::create(const HttpRequestPtr &req,
             Json::Value ret;
             ret["error"] = err;
             auto resp= HttpResponse::newHttpJsonResponse(ret);
-            resp->addHeader("Access-Control-Allow-Origin", "*"); // or specify a specific origin
             resp->setStatusCode(k400BadRequest);
             callback(resp);
             return;
@@ -374,7 +372,6 @@ void RestfulUsersCtrlBase::create(const HttpRequestPtr &req,
             Json::Value ret;
             ret["error"] = err;
             auto resp= HttpResponse::newHttpJsonResponse(ret);
-            resp->addHeader("Access-Control-Allow-Origin", "*"); // or specify a specific origin
             resp->setStatusCode(k400BadRequest);
             callback(resp);
             return;
@@ -393,24 +390,17 @@ void RestfulUsersCtrlBase::create(const HttpRequestPtr &req,
         drogon::orm::Mapper<Users> mapper(dbClientPtr);
         mapper.insert(
             object,
-            [req, callbackPtr, this](Users newObject)
-            {
-                auto resp = HttpResponse::newHttpJsonResponse(
-                    makeJson(req, newObject));
-                resp->addHeader("Access-Control-Allow-Origin", "*"); // or specify a specific origin
-
-                (*callbackPtr)(resp);
+            [req, callbackPtr, this](Users newObject){
+                (*callbackPtr)(HttpResponse::newHttpJsonResponse(
+                    makeJson(req, newObject)));
             },
-            [callbackPtr](const DrogonDbException &e)
-            {
+            [callbackPtr](const DrogonDbException &e){
                 LOG_ERROR << e.base().what();
                 Json::Value ret;
-                ret["error"] = e.base().what();
+                ret["error"] = "database error";
                 auto resp = HttpResponse::newHttpJsonResponse(ret);
-                resp->addHeader("Access-Control-Allow-Origin", "*"); // or specify a specific origin
-
                 resp->setStatusCode(k500InternalServerError);
-                (*callbackPtr)(resp);
+                (*callbackPtr)(resp);   
             });
     }
     catch(const Json::Exception &e)
@@ -419,7 +409,6 @@ void RestfulUsersCtrlBase::create(const HttpRequestPtr &req,
         Json::Value ret;
         ret["error"]="Field type error";
         auto resp= HttpResponse::newHttpJsonResponse(ret);
-        resp->addHeader("Access-Control-Allow-Origin", "*"); // or specify a specific origin
         resp->setStatusCode(k400BadRequest);
         callback(resp);
         return;        

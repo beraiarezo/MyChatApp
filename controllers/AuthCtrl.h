@@ -15,8 +15,8 @@ class AuthCtrl : public drogon::HttpController<AuthCtrl>
 {
 public:
   METHOD_LIST_BEGIN
-    ADD_METHOD_TO(AuthCtrl::login, "/login", Post);
-    ADD_METHOD_TO(AuthCtrl::login, "/loginn", Post, "AuthFilter");
+    ADD_METHOD_TO(AuthCtrl::login, "/login", Post, Options);
+    // ADD_METHOD_TO(AuthCtrl::login, "/loginn", Post, "AuthFilter");
   METHOD_LIST_END
 
   
