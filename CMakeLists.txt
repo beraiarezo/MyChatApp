@@ -12,7 +12,7 @@ check_include_file_cxx(coroutine HAS_COROUTINE)
 if (NOT "${CMAKE_CXX_STANDARD}" STREQUAL "")
     # Do nothing
 elseif (HAS_ANY AND HAS_STRING_VIEW AND HAS_COROUTINE)
-    set(CMAKE_CXX_STANDARD 20)
+    set(CMAKE_CXX_STANDARD 17)
 endif ()
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

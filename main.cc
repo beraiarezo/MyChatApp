@@ -3,7 +3,7 @@
 #include <sstream>
 #include <iostream>
 #include "controllers/EchoWebsock.h"
-#include "controllers/ConversationCtrl.h"
+// #include "controllers/ConversationCtrl.h"
 
 using namespace drogon;
 
@@ -59,15 +59,15 @@ int main() {
     // auto sharedService = std::make_shared<SharedStateService>();
 
 
-    auto wsCtrlPtr = std::make_shared<EchoWebsock>();
-    auto httpCtrlPtr = std::make_shared<ConversationCtrl>(wsCtrlPtr);
+    // auto wsCtrlPtr = std::make_shared<EchoWebsock>();
+    // auto httpCtrlPtr = std::make_shared<ConversationCtrl>(wsCtrlPtr);
 
     // auto corsFilter = std::make_shared<CorsFilter>();
    
 
     // drogon::app().registerController<ConversationCtrl>(sharedService);
-    drogon::app().registerController(httpCtrlPtr);
-    drogon::app().registerController(wsCtrlPtr);
+    // drogon::app().registerController(httpCtrlPtr);
+    // drogon::app().registerController(wsCtrlPtr);
 
 
     // Run the Drogon application
