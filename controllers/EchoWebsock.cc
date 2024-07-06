@@ -58,10 +58,26 @@ void EchoWebsock::handleNewConnection(const HttpRequestPtr &req, const WebSocket
 
      // Extract user ID from query parameters (e.g., ws://host/chat?user=userID)
     auto user = req->getParameter("user");
-
+    std::cout << user << "-----";
     if (!user.empty())
     {
         userConnections_[user] = wsConnPtr;
+
+        Json::Value message;
+        Json::Value userList(Json::arrayValue);
+        for (const auto &entry : userConnections_)
+        {
+            userList.append(entry.first);
+        }
+
+        message["users"] = userList;
+
+        // Convert the user list to a string
+        Json::StreamWriterBuilder writer;
+        std::string userListStr = Json::writeString(writer, message);
+
+        // Send the list of connected users to the newly connected user
+        wsConnPtr->send(userListStr, WebSocketMessageType::Text);
     }
 }
 
@@ -83,15 +99,16 @@ void EchoWebsock::handleConnectionClosed(const WebSocketConnectionPtr& wsConnPtr
     }
 }
 
-void EchoWebsock::sendMessageToUser(const std::string &userId, const std::string &message) {
+void EchoWebsock::sendMessageToUser(const std::vector<std::string> &userIds, const std::string &message) {
             updatable_lock lock(connectionsMutex_);
 
-    auto it = userConnections_.find(userId);
+     int i;
 
-    for (auto it = userConnections_.begin(); it != userConnections_.end(); ++it)
-    {
-
-
-        it->second->send("8681f5e9-e2fd-434e-9ca2-b774cd39fbcd:hello");
+    for (i = 0; i < userIds.size(); i++) {
+        auto it = userConnections_.find(userIds[i]);
+        for (auto it = userConnections_.begin(); it != userConnections_.end(); ++it)
+        {
+            it->second->send(userIds[i] + ":" + message);
+        }           
     }
 }

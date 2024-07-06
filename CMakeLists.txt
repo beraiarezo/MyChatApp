@@ -6,18 +6,19 @@ project(my_chat CXX)
 
 include(CheckIncludeFileCXX)
 
-check_include_file_cxx(any HAS_ANY)
-check_include_file_cxx(string_view HAS_STRING_VIEW)
-check_include_file_cxx(coroutine HAS_COROUTINE)
-if (NOT "${CMAKE_CXX_STANDARD}" STREQUAL "")
-    # Do nothing
-elseif (HAS_ANY AND HAS_STRING_VIEW AND HAS_COROUTINE)
-    set(CMAKE_CXX_STANDARD 17)
-endif ()
+# check_include_file_cxx(any HAS_ANY)
+# check_include_file_cxx(string_view HAS_STRING_VIEW)
+# check_include_file_cxx(coroutine HAS_COROUTINE)
+# if (NOT "${CMAKE_CXX_STANDARD}" STREQUAL "")
+#     # Do nothing
+# elseif (HAS_ANY AND HAS_STRING_VIEW AND HAS_COROUTINE)
+#     set(CMAKE_CXX_STANDARD 17)
+# endif ()
 
 # set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+# set(CMAKE_CXX_EXTENSIONS OFF)
 
+set(CMAKE_CXX_STANDARD 20)
 add_executable(${PROJECT_NAME} main.cc)
 
 
