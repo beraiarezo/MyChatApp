@@ -10,16 +10,26 @@ using updatable_lock = std::unique_lock<mutex_type>;
 
 using namespace drogon;
 
-// Function to notify user via WebSocket
-// void notifyUser(const std::string &userId, const std::string &message) {
-//     auto &wsController = EchoWebsock::getInstance();
-//     for (const auto &row : participantsResult) {
-//         std::string userId = row["user_id"].as<std::string>();
-//         wsController.sendMessageToUser(userId, "You have received a new message in conversation " + conversationId);
-//     }
 
-    
-// }
+// Function to check if chat exists and retrieve its ID
+Task<std::optional<std::string>> getChatIdIfExists(const std::vector<std::string> &userIds) {
+    auto dbClient = app().getDbClient();
+    try {
+        auto result = co_await dbClient->execSqlCoro(
+            "SELECT chat_id FROM users_chats WHERE user_id IN ($1, $2) GROUP BY chat_id HAVING COUNT(DISTINCT user_id) = 2",
+            userIds[0], userIds[1]
+        );
+
+        if (!result.empty()) {
+            co_return result[0]["chat_id"].as<std::string>();
+        } else {
+            co_return std::nullopt;
+        }
+    } catch (const orm::DrogonDbException &e) {
+        LOG_ERROR << "Error checking chat existence: " << e.base().what();
+        throw;
+    }
+}
 
 Task<drogon::orm::Row> createChat(const std::string &creator_id) {
     auto dbClient = app().getDbClient();
@@ -55,48 +65,7 @@ Task<drogon::orm::Row> addMessage(const std::string &chat_id, const std::string 
     }
 }
 
-
-Task<void> ConversationCtrl::performTransaction(
-    const std::string &conversationName,
-    bool isGroup,
-    const std::vector<std::string> &userIds,
-    const std::string &messageContent,
-    const std::string &senderId,
-    const std::shared_ptr<drogon::orm::DbClient> &dbClient) {
-    // Begin transaction
-    co_await dbClient->execSqlCoro("BEGIN");
-
-    // Step 1: Create Conversation
-    auto chatRow = co_await createChat(senderId);
-    std::string chatId = chatRow["id"].as<std::string>();
-
-    // Step 2: Add Participants
-    co_await addParticipants(chatId, userIds);
-
-    // Step 3: Add a Message to Conversation
-    auto messageRow = co_await addMessage(chatId, senderId, messageContent);
-    std::string messageId = messageRow["id"].as<std::string>();
-
-    // Link Message to Conversation
-
-    // Notify users about the new message
-    // auto participantsResult = co_await dbClient->execSqlCoro("SELECT user_id FROM participants WHERE conversation_id = $1", conversationId);
-    // auto wsController = EchoWebsock;
-    echoWebsock_->sendMessageToUser(userIds, messageContent);
-    // wsController->sendMessageToUser("8681f5e9-e2fd-434e-9ca2-b774cd39fbcd", "You have received a new message in conversation ");
-    // wsController.get()->sendMessageToUser()
-    // for (const auto &row : participantsResult) {
-    //     std::string userId = row["user_id"].as<std::string>();
-    //     wsController.sendMessageToUser(userId, "You have received a new message in conversation ");
-    // }
-
-    // Commit transaction
-    co_await dbClient->execSqlCoro("COMMIT");
-}
-
-Task<void> ConversationCtrl::createConversationWithParticipantsAndMessages(
-    const std::string &conversationName,
-    bool isGroup,
+Task<void> ConversationCtrl::handleNewChat(
     const std::vector<std::string> &userIds,
     const std::string &messageContent,
     const std::string &senderId) {
@@ -105,9 +74,67 @@ Task<void> ConversationCtrl::createConversationWithParticipantsAndMessages(
 
     try {
         // Perform the transaction
-        co_await performTransaction(conversationName, isGroup, userIds, messageContent, senderId, dbClient);
+        co_await dbClient->execSqlCoro("BEGIN");
+
+        // Create Chat
+        auto chatRow = co_await createChat(senderId);
+        std::string chatId = chatRow["id"].as<std::string>();
+
+        // Add Participants
+        co_await addParticipants(chatId, userIds);
+
+        // Add a Message to Chat
+        auto messageRow = co_await addMessage(chatId, senderId, messageContent);
+        std::string messageId = messageRow["id"].as<std::string>();
+
+        // Notify users about the new message
+        co_await notifyUsers(chatId, userIds, messageContent);
+
+        // Commit transaction
+        co_await dbClient->execSqlCoro("COMMIT");
     } catch (const orm::DrogonDbException &e) {
-        LOG_ERROR << "Error in transaction: " << e.base().what();
+        LOG_ERROR << "Error handling new chat: " << e.base().what();
+        exceptionOccurred = true;
+    }
+
+    if (exceptionOccurred) {
+        try {
+            co_await dbClient->execSqlCoro("ROLLBACK");
+        } catch (const orm::DrogonDbException &rollbackError) {
+            LOG_ERROR << "Error during rollback: " << rollbackError.base().what();
+            // Optionally handle rollback error
+        }
+        throw;
+    }
+}
+
+Task<void> ConversationCtrl::notifyUsers(const std::string &chat_id, const std::vector<std::string> &userIds, const std::string &message) {
+    for (const auto &userId : userIds) {
+        echoWebsock_->sendMessageToUser(userIds, "You have received a new message in chat " + chat_id + ": " + message);
+    }
+    co_return;
+}
+
+Task<void> ConversationCtrl::handleNewMessage(
+    const std::string &chat_id,
+    const std::string &messageContent,
+    const std::string &senderId,
+    const std::vector<std::string> &userIds) {
+    auto dbClient = app().getDbClient();
+    bool exceptionOccurred = false;
+
+    try {
+        // Add a Message to Chat
+        auto messageRow = co_await addMessage(chat_id, senderId, messageContent);
+        std::string messageId = messageRow["id"].as<std::string>();
+
+                echoWebsock_->sendMessageToUser(userIds, "You have received a new message in chat " + chat_id + ": " + messageContent);
+
+
+        // Notify users about the new message
+        co_await notifyUsers(chat_id, userIds, messageContent);
+    } catch (const orm::DrogonDbException &e) {
+        LOG_ERROR << "Error handling new message: " << e.base().what();
         exceptionOccurred = true;
     }
 
@@ -134,8 +161,6 @@ Task<void> ConversationCtrl::handleRequestAsync(const HttpRequestPtr &req, std::
     }
 
     // Extract data from JSON
-    std::string conversationName = (*json)["conversationName"].asString();
-    bool isGroup = (*json)["isGroup"].asBool();
     auto userIdsJson = (*json)["userIds"];
     std::vector<std::string> userIds;
     for (const auto &userId : userIdsJson) {
@@ -145,45 +170,30 @@ Task<void> ConversationCtrl::handleRequestAsync(const HttpRequestPtr &req, std::
     std::string senderId = (*json)["senderId"].asString();
 
     try {
-        // Perform the transaction
-        co_await createConversationWithParticipantsAndMessages(conversationName, isGroup, userIds, messageContent, senderId);
+        // Check if chat already exists between the users
+        auto existingChatId = co_await getChatIdIfExists(userIds);
+
+        if (existingChatId.has_value()) {
+            // Handle new message in existing chat
+            co_await handleNewMessage(existingChatId.value(), messageContent, senderId, userIds);
+        } else {
+            // Handle new chat creation and message
+            co_await handleNewChat(userIds, messageContent, senderId);
+        }
+
         auto resp = HttpResponse::newHttpResponse();
-        resp->setBody("Conversation created successfully!");
+        resp->setBody("Message processed successfully!");
         callback(resp);
     } catch (const std::exception &e) {
         auto resp = HttpResponse::newHttpResponse();
         resp->setStatusCode(HttpStatusCode::k500InternalServerError);
-        resp->setBody("Error creating conversation");
+        resp->setBody("Error processing message");
         callback(resp);
     }
 }
 
 void ConversationCtrl::handler(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback) {
-    // Launch the coroutine
-    // handleRequestAsync(req, std::move(callback));
-
     drogon::async_run([=]() -> Task<void> {
-        // auto dbClient = app().getDbClient();
-
-        //  co_await dbClient->execSqlCoro("INSERT INTO conversations (name, is_group) VALUES ($1, $2) RETURNING id", "name", false);
-           co_await handleRequestAsync(req, std::move(callback));
-
-        // auto sql = app().getDbClient();
-
-        // auto result = co_await sql->execSqlCoro("SELECT COUNT(*) FROM users;");
-        // size_t num_users = result[0][0].as<size_t>();
-        // // auto resp = HttpResponse::newHttpResponse();
-        // // resp->setBody(std::to_string(num_users));
-
-        // co_await sleepCoro(app().getLoop(), 1);
-
-        // std::cout << "Done" << std::endl;
-
-        // // co_return 5;
-         
-           
-        // co_await sleepCoro(app().getLoop(), 1);
-        // co_await Handle2();
-        // std::cout << "Done11111111" << std::endl;
+        co_await handleRequestAsync(req, std::move(callback));
     });
 }
