@@ -110,7 +110,7 @@ Task<void> ConversationCtrl::handleNewChat(
 
 Task<void> ConversationCtrl::notifyUsers(const std::string &chat_id, const std::vector<std::string> &userIds, const std::string &message) {
     for (const auto &userId : userIds) {
-        echoWebsock_->sendMessageToUser(userIds, "You have received a new message in chat " + chat_id + ": " + message);
+        echoWebsock_->sendMessageToUser(userIds, chat_id, message);
     }
     co_return;
 }
@@ -127,9 +127,6 @@ Task<void> ConversationCtrl::handleNewMessage(
         // Add a Message to Chat
         auto messageRow = co_await addMessage(chat_id, senderId, messageContent);
         std::string messageId = messageRow["id"].as<std::string>();
-
-                echoWebsock_->sendMessageToUser(userIds, "You have received a new message in chat " + chat_id + ": " + messageContent);
-
 
         // Notify users about the new message
         co_await notifyUsers(chat_id, userIds, messageContent);
@@ -182,11 +179,13 @@ Task<void> ConversationCtrl::handleRequestAsync(const HttpRequestPtr &req, std::
         }
 
         auto resp = HttpResponse::newHttpResponse();
+        resp->addHeader("Access-Control-Allow-Origin", "*"); // or specify a specific origin
         resp->setBody("Message processed successfully!");
         callback(resp);
     } catch (const std::exception &e) {
         auto resp = HttpResponse::newHttpResponse();
         resp->setStatusCode(HttpStatusCode::k500InternalServerError);
+        resp->addHeader("Access-Control-Allow-Origin", "*"); // or specify a specific origin
         resp->setBody("Error processing message");
         callback(resp);
     }

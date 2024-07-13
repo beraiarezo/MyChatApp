@@ -21,7 +21,7 @@ class EchoWebsock : public drogon::WebSocketController<EchoWebsock, false>
                                      const WebSocketConnectionPtr&) override;
     void handleConnectionClosed(const WebSocketConnectionPtr&) override;
 
-    void sendMessageToUser(const std::vector<std::string>&userIds, const std::string &message);
+    void sendMessageToUser(const std::vector<std::string>&userIds, const std::string &chatId, const std::string &content);
 
     WS_PATH_LIST_BEGIN
       WS_PATH_ADD("/chat", Get);

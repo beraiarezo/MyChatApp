@@ -76,8 +76,13 @@ void EchoWebsock::handleNewConnection(const HttpRequestPtr &req, const WebSocket
         Json::StreamWriterBuilder writer;
         std::string userListStr = Json::writeString(writer, message);
 
+
+         for (const auto &entry : userConnections_)
+        {
+            entry.second->send(userListStr, WebSocketMessageType::Text);
+        }
         // Send the list of connected users to the newly connected user
-        wsConnPtr->send(userListStr, WebSocketMessageType::Text);
+        // wsConnPtr->send(userListStr, WebSocketMessageType::Text);
     }
 }
 
@@ -99,7 +104,7 @@ void EchoWebsock::handleConnectionClosed(const WebSocketConnectionPtr& wsConnPtr
     }
 }
 
-void EchoWebsock::sendMessageToUser(const std::vector<std::string> &userIds, const std::string &message) {
+void EchoWebsock::sendMessageToUser(const std::vector<std::string> &userIds, const std::string &chatId, const std::string &content) {
             updatable_lock lock(connectionsMutex_);
 
      int i;
@@ -108,7 +113,18 @@ void EchoWebsock::sendMessageToUser(const std::vector<std::string> &userIds, con
         auto it = userConnections_.find(userIds[i]);
         for (auto it = userConnections_.begin(); it != userConnections_.end(); ++it)
         {
-            it->second->send(userIds[i] + ":" + message);
+            
+        Json::Value message;
+        
+        message["content"] = content;
+        message["chatId"] = chatId;
+        message["userId"] = userIds[i];
+
+        Json::StreamWriterBuilder writer;
+        std::string str = Json::writeString(writer, message);
+
+        it->second->send(str, WebSocketMessageType::Text);
+
         }           
     }
 }
