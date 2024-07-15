@@ -65,7 +65,6 @@ void EchoWebsock::handleNewConnection(const HttpRequestPtr &req, const WebSocket
         Json::Value userData;
 
         // Create a callback function to handle the response from getOne
-         Json::Value userData;
 
             // Create a callback function to handle the response from getOne
          auto callback = [wsConnPtr, this, &userData](const HttpResponsePtr &response)
