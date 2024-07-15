@@ -45,7 +45,7 @@ void EchoWebsock::handleNewMessage(const WebSocketConnectionPtr& wsConnPtr, std:
             auto recipientConn = userConnections_.find(recipient);
             if (recipientConn != userConnections_.end())
             {
-                recipientConn->second->send(msg);
+                recipientConn->second.socketPtr->send(msg);
             }
         }
     }
@@ -58,16 +58,50 @@ void EchoWebsock::handleNewConnection(const HttpRequestPtr &req, const WebSocket
 
      // Extract user ID from query parameters (e.g., ws://host/chat?user=userID)
     auto user = req->getParameter("user");
+
     std::cout << user << "-----";
     if (!user.empty())
     {
-        userConnections_[user] = wsConnPtr;
+        Json::Value userData;
 
-        Json::Value message;
-        Json::Value userList(Json::arrayValue);
-        for (const auto &entry : userConnections_)
-        {
-            userList.append(entry.first);
+        // Create a callback function to handle the response from getOne
+         Json::Value userData;
+
+            // Create a callback function to handle the response from getOne
+         auto callback = [wsConnPtr, this, &userData](const HttpResponsePtr &response)
+         {
+             if (response->statusCode() == k200OK)
+             {
+                 // Process the response from getOne
+                 auto json = response->getJsonObject();
+                 if (json)
+                 {
+                     // Store the user data
+                     userData = *json;
+                 }
+             }
+             else
+             {
+                 // Handle error case
+                 wsConnPtr->send("Error retrieving user data", WebSocketMessageType::Text);
+             }
+         };
+
+         Users fetchedUser(userData);
+
+         userConnections_.emplace(fetchedUser.getValueOfId(), ConnectionInfo(wsConnPtr, fetchedUser));
+         //  {
+         //     socketPtr= wsConnPtr;
+         //  }
+
+         RestfulUsersCtrl restfulUsersCtrl;
+         restfulUsersCtrl.getOne(req, std::move(callback), std::move(user));
+
+         Json::Value message;
+         Json::Value userList(Json::arrayValue);
+         for (const auto &entry : userConnections_)
+         {
+             userList.append(entry.first);
         }
 
         message["users"] = userList;
@@ -79,7 +113,7 @@ void EchoWebsock::handleNewConnection(const HttpRequestPtr &req, const WebSocket
 
          for (const auto &entry : userConnections_)
         {
-            entry.second->send(userListStr, WebSocketMessageType::Text);
+            entry.second.socketPtr->send(userListStr, WebSocketMessageType::Text);
         }
         // Send the list of connected users to the newly connected user
         // wsConnPtr->send(userListStr, WebSocketMessageType::Text);
@@ -96,7 +130,7 @@ void EchoWebsock::handleConnectionClosed(const WebSocketConnectionPtr& wsConnPtr
     for (auto it = userConnections_.begin(); it != userConnections_.end(); ++it)
     {
         LOG_INFO << it->first;
-        if (it->second == wsConnPtr)
+        if (it->second.socketPtr == wsConnPtr)
         {
             userConnections_.erase(it);
             break;
@@ -105,7 +139,7 @@ void EchoWebsock::handleConnectionClosed(const WebSocketConnectionPtr& wsConnPtr
 }
 
 void EchoWebsock::sendMessageToUser(const std::vector<std::string> &userIds, const std::string &chatId, const std::string &content) {
-            updatable_lock lock(connectionsMutex_);
+    updatable_lock lock(connectionsMutex_);
 
      int i;
 
@@ -123,7 +157,7 @@ void EchoWebsock::sendMessageToUser(const std::vector<std::string> &userIds, con
         Json::StreamWriterBuilder writer;
         std::string str = Json::writeString(writer, message);
 
-        it->second->send(str, WebSocketMessageType::Text);
+        it->second.socketPtr->send(str, WebSocketMessageType::Text);
 
         }           
     }
