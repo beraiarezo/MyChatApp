@@ -1,7 +1,7 @@
 #include "ChatCtrl.h"
 
 // Add definition of your processing function here
-void ChatCtrl::getChattedUsers(const HttpRequestPtr &req, std::function<void (const HttpResponsePtr &)> &&callback, const std::string &userId, int limit, int offset) {
+void ChatCtrl::getChattedUsers(const HttpRequestPtr &req, std::function<void (const HttpResponsePtr &)> &&callback, const std::string &userId) {
         auto client = app().getDbClient();
         
         // Query to fetch paginated users
@@ -15,7 +15,6 @@ void ChatCtrl::getChattedUsers(const HttpRequestPtr &req, std::function<void (co
                 WHERE user_id = $1
             )
             ORDER BY u.name
-            LIMIT $2 OFFSET $3;
         )";
 
         // Query to count total users
@@ -33,7 +32,7 @@ void ChatCtrl::getChattedUsers(const HttpRequestPtr &req, std::function<void (co
         // Execute the queries
         client->execSqlAsync(
             fetchQuery,
-            [callback, client, countQuery, userId, limit, offset](const Result &r) {
+            [callback, client, countQuery, userId](const Result &r) {
                 Json::Value users(Json::arrayValue);
                 for (const auto &row : r) {
                     Json::Value user;
@@ -44,31 +43,15 @@ void ChatCtrl::getChattedUsers(const HttpRequestPtr &req, std::function<void (co
                     users.append(user);
                 }
 
-                // Check if there are more pages
-                client->execSqlAsync(
-                    countQuery,
-                    [callback, users, limit, offset](const Result &r) {
-                        int totalUsers = r[0]["count"].as<int>();
-                        Json::Value result;
-                        result["users"] = users;
-                        result["has_next_page"] = (offset + limit) < totalUsers;
-
-                        auto resp = HttpResponse::newHttpJsonResponse(result);
-                        callback(resp);
-                    },
-                    [callback](const DrogonDbException &e) {
-                        auto resp = HttpResponse::newHttpJsonResponse(Json::Value::nullSingleton());
-                        resp->setStatusCode(HttpStatusCode::k500InternalServerError);
-                        callback(resp);
-                    },
-                    userId
-                );
+                auto resp = HttpResponse::newHttpJsonResponse(users);
+                resp->addHeader("Access-Control-Allow-Origin", "*");
+                callback(resp);
             },
             [callback](const DrogonDbException &e) {
                 auto resp = HttpResponse::newHttpJsonResponse(Json::Value::nullSingleton());
                 resp->setStatusCode(HttpStatusCode::k500InternalServerError);
                 callback(resp);
             },
-            userId, limit, offset
+            userId
         );
     }

@@ -16,7 +16,7 @@ struct ConnectionInfo {
   drogon::WebSocketConnectionPtr socketPtr;
   Users user;
 
-  ConnectionInfo(const drogon::WebSocketConnectionPtr &ptr, const drogon_model::chat::Users &usr)
+  ConnectionInfo(const drogon::WebSocketConnectionPtr &ptr, const Users &usr)
       : socketPtr(ptr), user(usr) {}
 };
 
